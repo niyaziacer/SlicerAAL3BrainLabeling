@@ -2,7 +2,7 @@
   <img src="Resources/AAALtlas.png" alt="AAALtlas Logo" width="450"/>
 </p>
 
-# AAALtlas: Automated Anatomical Labeling 3 Pipeline for 3D Slicer
+# AAALtlas: Automated Anatomical Labeling 3 and Distance-Connectome Pipeline for 3D Slicer
 
 **AAALtlas** is a robust, high-fidelity neuroimaging pipeline designed as an extension for **3D Slicer**. Developed for publication-quality biophysics and neuroanatomy research, it seamlessly maps the **AAL3** (Automated Anatomical Labeling 3) atlas to patient-specific MRI data.
 

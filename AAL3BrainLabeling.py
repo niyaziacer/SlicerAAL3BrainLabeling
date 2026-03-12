@@ -8,12 +8,12 @@ import vtk
 from slicer.ScriptedLoadableModule import *
 
 # -------------------------------------------------------------------------
-# AAALtlas (Main Class)
+# AAL3BrainLabeling (Main Class)
 # -------------------------------------------------------------------------
-class AAALtlas(ScriptedLoadableModule):
+class AAL3BrainLabeling(ScriptedLoadableModule):
     def __init__(self, parent):
         ScriptedLoadableModule.__init__(self, parent)
-        self.parent.title = "AAALtlas"
+        self.parent.title = "AAL3BrainLabeling"
         self.parent.categories = ["Neuroimaging"]
         
         self.parent.contributors = ["Dr. Mustafa Sakci", "Prof. Dr. Niyazi Acer"]
@@ -26,19 +26,19 @@ class AAALtlas(ScriptedLoadableModule):
         self.parent.acknowledgementText = "Developed for publication-quality biophysics and neuroimaging research."
 
 # -------------------------------------------------------------------------
-# AAALtlasWidget
+# AAL3BrainLabelingWidget
 # -------------------------------------------------------------------------
-class AAALtlasWidget(ScriptedLoadableModuleWidget):
+class AAL3BrainLabelingWidget(ScriptedLoadableModuleWidget):
     def setup(self):
         ScriptedLoadableModuleWidget.setup(self)
-        self.logic = AAALtlasLogic()
+        self.logic = AAL3BrainLabelingLogic()
 
         # 1. Logo Integration
         try:
-            moduleDir = os.path.dirname(slicer.modules.aaaltlas.path)
-            logoPath = os.path.join(moduleDir, 'Resources', 'AAALtlas.png')
+            moduleDir = os.path.dirname(slicer.modules.AAL3BrainLabeling.path)
+            logoPath = os.path.join(moduleDir, 'Resources', 'AAL3BrainLabeling.png')
             if not os.path.exists(logoPath):
-                logoPath = os.path.join(moduleDir, 'AAALtlas.png')
+                logoPath = os.path.join(moduleDir, 'AAL3BrainLabeling.png')
 
             if os.path.exists(logoPath):
                 logoLabel = qt.QLabel()
@@ -50,7 +50,7 @@ class AAALtlasWidget(ScriptedLoadableModuleWidget):
             pass
 
         # 2. UI Layout Initialization
-        uiBox = qt.QGroupBox("AAALtlas Analysis Pipeline")
+        uiBox = qt.QGroupBox("AAL3BrainLabeling Analysis Pipeline")
         self.layout.addWidget(uiBox)
         formLayout = qt.QFormLayout(uiBox)
 
@@ -120,15 +120,15 @@ class AAALtlasWidget(ScriptedLoadableModuleWidget):
         self.logic.batchPipeline(folder, self.outputPath, self.progress)
 
 # -------------------------------------------------------------------------
-# AAALtlasLogic
+# AAL3BrainLabelingLogic
 # -------------------------------------------------------------------------
-class AAALtlasLogic(ScriptedLoadableModuleLogic):
+class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
 
     def pipeline(self, inputVolume, outDir, progress):
         volName = inputVolume.GetName()
         
         print("\n" + "="*50)
-        print(f"AAALtlas Pipeline Started for: {volName}")
+        print(f"AAL3BrainLabeling Pipeline Started for: {volName}")
         print("="*50)
         progress.setValue(5)
 
@@ -191,7 +191,7 @@ class AAALtlasLogic(ScriptedLoadableModuleLogic):
         return outputVolume
 
     def registration(self, volume):
-        moduleDir = os.path.dirname(slicer.modules.aaaltlas.path)
+        moduleDir = os.path.dirname(slicer.modules.AAL3BrainLabeling.path)
         templatePath = os.path.join(moduleDir, "Resources", "Templates", "MNI152_T1_1mm.nii.gz")
         
         if not os.path.exists(templatePath):
@@ -199,7 +199,7 @@ class AAALtlasLogic(ScriptedLoadableModuleLogic):
             return volume, None
             
         templateNode = slicer.util.loadVolume(templatePath, {"show": False})
-        transformNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLTransformNode", "AAALtlas_Transform")
+        transformNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLTransformNode", "AAL3BrainLabeling_Transform")
 
         try:
             try:
@@ -238,9 +238,9 @@ class AAALtlasLogic(ScriptedLoadableModuleLogic):
             param_bspline = base_config + '(Transform "BSplineTransform")\n(FinalGridSpacingInPhysicalUnits 10.0)\n(NumberOfResolutions 4)\n(MaximumNumberOfIterations 500)\n(NumberOfSpatialSamples 10000)\n'
 
             temp_dir = slicer.app.temporaryPath
-            rigid_file = os.path.join(temp_dir, "AAALtlas_Rigid.txt")
-            affine_file = os.path.join(temp_dir, "AAALtlas_Affine.txt")
-            bspline_file = os.path.join(temp_dir, "AAALtlas_BSpline.txt")
+            rigid_file = os.path.join(temp_dir, "AAL3BrainLabeling_Rigid.txt")
+            affine_file = os.path.join(temp_dir, "AAL3BrainLabeling_Affine.txt")
+            bspline_file = os.path.join(temp_dir, "AAL3BrainLabeling_BSpline.txt")
 
             with open(rigid_file, "w", newline='\n') as f: f.write(param_rigid)
             with open(affine_file, "w", newline='\n') as f: f.write(param_affine)
@@ -262,7 +262,7 @@ class AAALtlasLogic(ScriptedLoadableModuleLogic):
         return volume, transformNode
 
     def atlasMapping(self, transform):
-        moduleDir = os.path.dirname(slicer.modules.aaaltlas.path)
+        moduleDir = os.path.dirname(slicer.modules.AAL3BrainLabeling.path)
         atlasPath = os.path.join(moduleDir, "Resources", "Atlas", "AAL3v1_1mm.nii.gz")
         ctblPath = os.path.join(moduleDir, "Resources", "Atlas", "AAL3_ColorTable.ctbl")
         

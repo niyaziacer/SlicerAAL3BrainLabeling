@@ -70,27 +70,27 @@ AAALtlas/
         └── AAL3\_labels.csv
 
 ## ⚙️ Requirements \& Installation
-1. 3D Slicer: Version 5.10.0 or higher is recommended.
-2. SlicerElastix: You must install the SlicerElastix extension via the 3D Slicer Extension Manager.
+1. **3D Slicer:** Version 5.10.0 or higher is recommended.
+2. **SlicerElastix:** You must install the SlicerElastix extension via the 3D Slicer Extension Manager.
 
-Installation Steps:
+### 🛠️ Installation Steps
 1. Clone this repository to your local machine.
 2. Open 3D Slicer.
-3. Navigate to Edit → Application Settings → Modules.
-4. Add the cloned AAALtlas folder to your Additional Module Paths.
-5. Restart 3D Slicer. The module will be available under the Neuroimaging category.
+3. Navigate to **Edit** → **Application Settings** → **Modules**.
+4. Add the cloned `SlicerAAALtlas` folder to your **Additional Module Paths**.
+5. Restart 3D Slicer. The module will be available under the **Atlases** and **Neuroimaging** categories.
 
 ## 🚀 Usage
-Single Patient Analysis
-1. Select the patient's T1-weighted MRI volume from the Input MRI dropdown.
-2. Choose an Output Folder for the resulting CSV files.
-3. Click Run FULL Pipeline.
+### 👤 Single Patient Analysis
+1. Select the patient's T1-weighted MRI volume from the **Input MRI** dropdown.
+2. Choose an **Output Folder** for the resulting CSV files.
+3. Click **Run FULL Pipeline**.
 4. Upon completion, Slicer will automatically switch to the Segment Editor and display the 3D brain map.
 
-Batch Processing
-1. Place all T1-weighted MRI files (.nii or .nii.gz) into a single directory.
-2. Select your designated Output Folder.
-3. Click Batch Process Folder and select the directory containing your MRI files.
+### 📂 Batch Processing
+1. Place all T1-weighted MRI files (`.nii` or `.nii.gz`) into a single directory.
+2. Select your designated **Output Folder**.
+3. Click **Batch Process Folder** and select the directory containing your MRI files.
 
 ## 👨‍🔬 Contributors
 Dr. Mustafa Sakci

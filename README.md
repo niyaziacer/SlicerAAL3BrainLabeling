@@ -1,10 +1,10 @@
 <p align="center">
-  <img src="Resources/AAALtlas.png" alt="AAALtlas Logo" width="450"/>
+  <img src="Resources/AAL3BrainLabeling.png" alt="AAL3BrainLabeling Logo" width="450"/>
 </p>
 
-# AAALtlas: Automated Anatomical Labeling 3 and Distance-Connectome Pipeline for 3D Slicer
+# AAL3BrainLabeling: Automated Anatomical Labeling 3 and Distance-Connectome Pipeline for 3D Slicer
 
-**AAALtlas** is a robust, high-fidelity neuroimaging pipeline designed as an extension for **3D Slicer**. Developed for publication-quality biophysics and neuroanatomy research, it seamlessly maps the **AAL3** (Automated Anatomical Labeling 3) atlas to patient-specific MRI data.
+**AAL3BrainLabeling** is a robust, high-fidelity neuroimaging pipeline designed as an extension for **3D Slicer**. Developed for publication-quality biophysics and neuroanatomy research, it seamlessly maps the **AAL3** (Automated Anatomical Labeling 3) atlas to patient-specific MRI data.
 
 The pipeline handles bias field correction, multimodal image registration, automated anatomical segmentation, morphometric statistics extraction, hemispheric asymmetry calculation, and structural connectome generation.
 
@@ -40,10 +40,10 @@ $$d(i, j) = \sqrt{(x_i - x_j)^2 + (y_i - y_j)^2 + (z_i - z_j)^2}$$
 
 ## 🖼️ Visual Validation and Output Example
 
-Below is a demonstration of the AAALtlas pipeline output as rendered in 3D Slicer's Segment Editor module.
+Below is a demonstration of the AAL3BrainLabeling pipeline output as rendered in 3D Slicer's Segment Editor module.
 
 <p align="center">
-  <img src="Screenshots/Screenshot.png" alt="AAALtlas Pipeline Output in 3D Slicer" width="800"/>
+  <img src="Screenshots/Screenshot.png" alt="AAL3BrainLabeling Pipeline Output in 3D Slicer" width="800"/>
   <br>
   <i><b>Figure 1:</b> High-resolution 3D surface rendering generated automatically from a patient's T1 MRI. Note the smooth non-linear conformity to cortical geometry (preventing tissue 'melting') and the preservation of native AAL3 nomenclature in the segment list.</i>
 </p>
@@ -51,23 +51,23 @@ Below is a demonstration of the AAALtlas pipeline output as rendered in 3D Slice
 ## 📂 Repository Structure
 
 ```text
-AAALtlas/
-├── AAALtlas.json
-├── AAALtlas.py
+SlicerAAL3BrainLabeling/
+├── AAL3BrainLabeling.json
+├── AAL3BrainLabeling.py
 ├── CMakeLists.txt
 ├── LICENSE.txt
 ├── README.md
 ├── Screenshots/
-│   └──Screenshot.png
+│   └── Screenshot.png
 └── Resources/
-    ├── AAALtlas.png
+    ├── AAL3BrainLabeling.png
     ├── Templates/
-    │   └── MNI152\_T1\_1mm.nii.gz
+    │   └── MNI152_T1_1mm.nii.gz
     ├── Atlas/
-    │   ├── AAL3v1\_1mm.nii.gz
-    │   └── AAL3\_ColorTable.ctbl
+    │   ├── AAL3v1_1mm.nii.gz
+    │   └── AAL3_ColorTable.ctbl
     └── Labels/
-        └── AAL3\_labels.csv
+        └── AAL3_labels.csv
 
 ## ⚙️ Requirements \& Installation
 1. **3D Slicer:** Version 5.10.0 or higher is recommended.
@@ -77,7 +77,7 @@ AAALtlas/
 1. Clone this repository to your local machine.
 2. Open 3D Slicer.
 3. Navigate to **Edit** → **Application Settings** → **Modules**.
-4. Add the cloned `SlicerAAALtlas` folder to your **Additional Module Paths**.
+4. Add the cloned `SlicerAAL3BrainLabeling` folder to your **Additional Module Paths**.
 5. Restart 3D Slicer. The module will be available under the **Atlases** and **Neuroimaging** categories.
 
 ## 🚀 Usage

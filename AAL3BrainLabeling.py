@@ -373,6 +373,11 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
         print(f"Connectome matrix saved to: {csvPath}")
 
     def batchPipeline(self, folder, outDir, progress):
+        """
+        Processes a batch of MRI volumes (.nii or .nii.gz) from a selected folder.
+        Ensures strict memory management by clearing MRML scene nodes after each 
+        subject to prevent RAM overflow (memory leaks) during large cohort analyses.
+        """
         files = [f for f in os.listdir(folder) if f.endswith(('.nii', '.nii.gz'))]
         total = len(files)
         print(f"\nBatch processing initiated for {total} files.")
@@ -380,7 +385,32 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
         for i, f in enumerate(files):
             print(f"\nProcessing subject {i+1}/{total}: {f}")
             path = os.path.join(folder, f)
+            
+            # Load the current subject's volume into the scene
             volume = slicer.util.loadVolume(path)
+            
             if volume:
-                self.pipeline(volume, outDir, progress)
+                # 1. Execute the main pipeline and capture the resulting segmentation
+                segmentation = self.pipeline(volume, outDir, progress)
+                
+                # ---------------------------------------------------------
+                # MEMORY MANAGEMENT: Clean up the MRML scene
+                # ---------------------------------------------------------
+                # Remove the original input volume
                 slicer.mrmlScene.RemoveNode(volume)
+                
+                # Remove the generated segmentation node
+                if segmentation:
+                    slicer.mrmlScene.RemoveNode(segmentation)
+                    
+                # Remove intermediate N4 Bias Field Correction node
+                n4_node = slicer.mrmlScene.GetFirstNodeByName("N4_Corrected")
+                if n4_node:
+                    slicer.mrmlScene.RemoveNode(n4_node)
+                    
+                # Remove the computed Elastix transform node
+                transform_node = slicer.mrmlScene.GetFirstNodeByName("AAL3BrainLabeling_Transform")
+                if transform_node:
+                    slicer.mrmlScene.RemoveNode(transform_node)
+                    
+                print(f"--- Subject {i+1} completed and memory cleared ---")

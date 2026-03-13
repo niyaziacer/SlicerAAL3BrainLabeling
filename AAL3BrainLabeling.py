@@ -392,7 +392,3 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
                     if transform: slicer.mrmlScene.RemoveNode(transform)
                 
                 slicer.mrmlScene.RemoveNode(volume)
-                    if volN4: slicer.mrmlScene.RemoveNode(volN4)
-                    if transform: slicer.mrmlScene.RemoveNode(transform)
-                
-                slicer.mrmlScene.RemoveNode(volume)

@@ -35,7 +35,7 @@ class AAL3BrainLabelingWidget(ScriptedLoadableModuleWidget):
 
         # 1. Logo Integration
         try:
-            moduleDir = os.path.dirname(slicer.modules.AAL3BrainLabeling.path)
+            moduleDir = os.path.dirname(slicer.modules.aal3brainlabeling.path)
             logoPath = os.path.join(moduleDir, 'Resources', 'AAL3BrainLabeling.png')
             if not os.path.exists(logoPath):
                 logoPath = os.path.join(moduleDir, 'AAL3BrainLabeling.png')

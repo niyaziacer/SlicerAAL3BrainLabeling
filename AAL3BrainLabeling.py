@@ -191,7 +191,7 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
         return outputVolume
 
     def registration(self, volume):
-        moduleDir = os.path.dirname(slicer.modules.AAL3BrainLabeling.path)
+        moduleDir = os.path.dirname(slicer.modules.aal3brainlabeling.path)
         templatePath = os.path.join(moduleDir, "Resources", "Templates", "MNI152_T1_1mm.nii.gz")
         
         if not os.path.exists(templatePath):
@@ -282,7 +282,7 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
         return volume, transformNode
 
     def atlasMapping(self, transform):
-        moduleDir = os.path.dirname(slicer.modules.AAL3BrainLabeling.path)
+        moduleDir = os.path.dirname(slicer.modules.aal3brainlabeling.path)
         atlasPath = os.path.join(moduleDir, "Resources", "Atlas", "AAL3v1_1mm.nii.gz")
         ctblPath = os.path.join(moduleDir, "Resources", "Atlas", "AAL3_ColorTable.ctbl")
         

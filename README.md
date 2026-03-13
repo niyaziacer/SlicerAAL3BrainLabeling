@@ -69,7 +69,7 @@ SlicerAAL3BrainLabeling/
     └── Labels/
         └── AAL3_labels.csv
 
-## ⚙️ Requirements \& Installation
+## ⚙️ Requirements & Installation
 1. **3D Slicer:** Version 5.10.0 or higher is recommended.
 2. **SlicerElastix:** You must install the SlicerElastix extension via the 3D Slicer Extension Manager.
 

@@ -13,7 +13,7 @@ The pipeline handles bias field correction, multimodal image registration, autom
 1. **N4ITK Bias Field Correction:** Harmonizes MRI intensities to remove radio-frequency (RF) coil inhomogeneities.
 2. **High-Fidelity Elastix Registration:** Employs an optimized, multi-stage registration approach (Rigid → Affine → B-Spline) mapping the MNI152 template to the patient's native anatomical space with 10,000 spatial samples for peak cortical precision.
 3. **Automated Atlas Warping:** Accurately deforms the AAL3 atlas to fit the patient's specific cortical and subcortical geometry.
-4. **Morphometric Extraction:** Calculates the volume (mm^3) and mean intensity for every predefined anatomical region.
+4. **Morphometric Extraction:** Calculates the volume (mm<sup>3</sup>) and mean intensity for every predefined anatomical region.
 5. **Hemispheric Asymmetry Analysis:** Automatically computes the Asymmetry Index (AI) for corresponding left and right hemispheric structures.
 6. **Centroid-Based Connectomics:** Generates a complete Euclidean distance-based structural connectome matrix using exact regional centroids.
 7. **Batch Processing:** Includes a fully automated batch processing module for cohort studies.

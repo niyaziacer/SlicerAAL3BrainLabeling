@@ -18,6 +18,9 @@ class AAL3BrainLabeling(ScriptedLoadableModule):
         self.parent.contributors = ["Dr. Mustafa Sakci", "Prof. Dr. Niyazi Acer"]
         self.parent.helpText = """
         AAL3 atlas-based morphometric and distance-connectome analysis pipeline.<br><br>
+        <b>If you use this pipeline in your research, please ensure you cite the foundational AAL3 atlas paper:</b><br>
+        Rolls, E. T., Huang, C. C., Lin, C. P., Feng, J., & Joliot, M. (2020). 
+        Automated anatomical labelling atlas 3. Neuroimage, 206, 116189.<br><br>
         <b>Features:</b><br>
         - N4ITK Bias Field Correction<br>
         - High-Fidelity Elastix Registration (Rigid -> Affine -> B-Spline)<br>
@@ -40,7 +43,6 @@ class AAL3BrainLabelingWidget(ScriptedLoadableModuleWidget):
 
         # Branding: Module Logo Integration
         try:
-            # Slicer registers modules in lowercase internally; we follow this convention for path retrieval
             moduleDir = os.path.dirname(slicer.modules.aal3brainlabeling.path)
             logoPath = os.path.join(moduleDir, 'Resources', 'AAL3BrainLabeling.png')
             if not os.path.exists(logoPath):
@@ -55,18 +57,18 @@ class AAL3BrainLabelingWidget(ScriptedLoadableModuleWidget):
         except Exception:
             pass
 
-        uiBox = qt.QGroupBox("AAL3BrainLabeling - Professional Analysis Suite")
+        # Main UI Box
+        uiBox = qt.QGroupBox("AAL3BrainLabeling")
         self.layout.addWidget(uiBox)
         formLayout = qt.QFormLayout(uiBox)
 
-        # 1. Dual-Purpose Input Selector: Handles single Volumes and Subject Hierarchy Folders
+        # 1. Single Volume Input Selector
         self.inputSelector = slicer.qMRMLNodeComboBox()
-        # Allows selection of individual MRI volumes or organizational folders in the scene
-        self.inputSelector.nodeTypes = ["vtkMRMLScalarVolumeNode", "vtkMRMLSubjectHierarchyNode"]
+        self.inputSelector.nodeTypes = ["vtkMRMLScalarVolumeNode"]
         self.inputSelector.setMRMLScene(slicer.mrmlScene)
         self.inputSelector.addEnabled = False
-        self.inputSelector.toolTip = "Select a single MRI volume or a loaded Folder from the scene."
-        formLayout.addRow("Input MRI/Folder: ", self.inputSelector)
+        self.inputSelector.toolTip = "Select a single MRI volume loaded in the scene."
+        formLayout.addRow("Input MRI Volume: ", self.inputSelector)
 
         # 2. Output Directory Selector
         self.outputButton = qt.QPushButton("Select Results Folder")
@@ -74,14 +76,12 @@ class AAL3BrainLabelingWidget(ScriptedLoadableModuleWidget):
         formLayout.addRow("Output Directory: ", self.outputButton)
         self.outputPath = slicer.app.temporaryPath
 
-        # 3. Action Buttons with distinctive, uniform styling
-        # Primary button for processing the currently selected scene item
-        self.runButton = qt.QPushButton("PROCESS SELECTED ITEM")
+        # 3. Action Buttons
+        self.runButton = qt.QPushButton("PROCESS SINGLE VOLUME")
         self.runButton.setStyleSheet("background-color: #2c3e50; color: white; font-weight: bold; padding: 10px; min-height: 40px;")
         formLayout.addRow(self.runButton)
 
-        # Secondary button for automated batch processing of an external directory
-        self.batchButton = qt.QPushButton("PROCESS EXTERNAL DIRECTORY")
+        self.batchButton = qt.QPushButton("PROCESS EXTERNAL FOLDER")
         self.batchButton.setStyleSheet("background-color: #16a085; color: white; font-weight: bold; padding: 10px; min-height: 40px;")
         formLayout.addRow(self.batchButton)
 
@@ -104,61 +104,39 @@ class AAL3BrainLabelingWidget(ScriptedLoadableModuleWidget):
         self.batchButton.clicked.connect(self.batch)
 
     def selectOutput(self):
-        # Trigger directory selection for saving clinical results
+        """Opens dialog to select the directory for saving clinical results."""
         directory = qt.QFileDialog.getExistingDirectory()
         if directory:
             self.outputPath = directory
             self.outputButton.text = directory
 
     def run(self):
-        # Logic to handle both single volumes and SH folders from the dropdown
-        selectedNode = self.inputSelector.currentNode()
-        if not selectedNode:
-            slicer.util.errorDisplay("Please select an Input MRI or Folder first.")
+        """Validates input and initiates the pipeline for a single selected MRI."""
+        volume = self.inputSelector.currentNode()
+        if not volume:
+            slicer.util.errorDisplay("Please select an Input MRI Volume first.")
             return
 
         self.progress.show()
         self.statusLabel.show()
 
-        # Check if selected item is a single volume
-        if selectedNode.IsA("vtkMRMLScalarVolumeNode"):
-            segmentation = self.logic.pipeline(selectedNode, self.outputPath, self.progress, self.statusLabel)
-            # Switch to Segment Editor automatically upon completion for visual inspection
+        # Pipeline returns objects for proper memory management
+        result = self.logic.pipeline(volume, self.outputPath, self.progress, self.statusLabel)
+        
+        if result:
+            segmentation = result[0]
             if segmentation:
                 try:
                     slicer.util.selectModule("SegmentEditor")
                     segmentEditorWidget = slicer.modules.segmenteditor.widgetRepresentation().self().editor
                     segmentEditorWidget.setSegmentationNode(segmentation)
-                    segmentEditorWidget.setSourceVolumeNode(selectedNode)
+                    segmentEditorWidget.setSourceVolumeNode(volume)
                 except Exception as e:
                     print(f"Could not automatically switch to Segment Editor: {e}")
-        
-        # Check if selected item is a Subject Hierarchy folder
-        elif selectedNode.IsA("vtkMRMLSubjectHierarchyNode"):
-            # Process all child volume nodes within the selected folder
-            shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
-            children = vtk.vtkIdList()
-            shNode.GetItemChildren(selectedNode.GetID(), children, True)
-            
-            volumes = []
-            for i in range(children.GetNumberOfIds()):
-                childID = children.GetId(i)
-                node = shNode.GetItemDataNode(childID)
-                if node and node.IsA("vtkMRMLScalarVolumeNode"):
-                    volumes.append(node)
-            
-            if not volumes:
-                slicer.util.errorDisplay("Selected folder contains no MRI volumes.")
-                self.progress.hide()
-                self.statusLabel.hide()
-                return
-                
-            for vol in volumes:
-                self.logic.pipeline(vol, self.outputPath, self.progress, self.statusLabel)
 
     def batch(self):
-        # Logic for processing an un-loaded folder directly from the disk
-        inputFolder = qt.QFileDialog.getExistingDirectory(None, "Select Disk Folder Containing MRI Files")
+        """Prompts for an external directory and initiates batch processing."""
+        inputFolder = qt.QFileDialog.getExistingDirectory(None, "Select Folder Containing MRI Files")
         if not inputFolder:
             return
         self.progress.show()
@@ -171,48 +149,54 @@ class AAL3BrainLabelingWidget(ScriptedLoadableModuleWidget):
 class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
 
     def updateUI(self, msg, progress_val, progress_bar, status_label):
-        """Standard method to update UI and keep Slicer responsive during synchronous tasks."""
+        """Updates UI elements and forces Slicer to process events, preventing app freezes."""
         print(msg)
         if progress_bar: progress_bar.setValue(progress_val)
         if status_label: status_label.text = msg
         slicer.app.processEvents()
 
     def pipeline(self, inputVolume, outDir, progress, statusLabel=None):
-        """Full execution sequence: N4 -> Registration -> Atlas -> Statistics -> Connectome."""
+        """
+        Executes the full pipeline: N4 -> Registration -> Atlas Mapping -> Statistics -> Connectome.
+        Returns generated nodes (segmentation, volN4, transform) for strict memory tracking.
+        """
         volName = inputVolume.GetName()
         self.updateUI(f"Starting analysis: {volName}", 10, progress, statusLabel)
         
-        # 1. Image preprocessing (Bias Field Correction)
+        # 1. Bias Field Correction
         self.updateUI("Step 1/5: Running N4 Bias Field Correction...", 15, progress, statusLabel)
-        volN4 = self.biasCorrection(inputVolume)
+        volN4 = self.biasCorrection(inputVolume, volName)
         
-        # 2. Sequential registration for maximum anatomical fidelity
+        # 2. Sequential registration (Rigid -> Affine -> B-Spline)
         warning_msg = "Step 2/5: High-Precision Registration running...\n[WAIT] UI may freeze for 3-5 mins. This is normal."
         self.updateUI(warning_msg, 30, progress, statusLabel)
-        regVol, transform = self.registration(volN4)
+        
+        regVol, transform = self.registration(volN4, volName)
         if not transform: 
             self.updateUI("ERROR: Registration Failed!", 0, progress, statusLabel)
             return None
 
-        # 3. Atlas mapping to subject-specific space
+        # 3. Atlas mapping to subject space
         self.updateUI("Step 3/5: Mapping AAL3 Atlas Labels...", 60, progress, statusLabel)
-        segmentation = self.atlasMapping(transform)
+        segmentation = self.atlasMapping(transform, volName)
 
-        # 4. Feature extraction and volumetric quantification
+        # 4. Volumetric feature extraction
         self.updateUI("Step 4/5: Computing Regional Morphometry...", 85, progress, statusLabel)
         stats = self.volumeStatistics(segmentation, regVol)
         
-        # 5. Multimodal Data Export (CSV, Asymmetry, Distance Connectome)
+        # 5. Multimodal Data Export
         self.updateUI("Step 5/5: Exporting Results and Computing Matrices...", 90, progress, statusLabel)
         self.exportStats(stats, outDir, segmentation, volName)
         self.asymmetry(stats, segmentation)
         self.connectome(stats, outDir, volName)
         
         self.updateUI(f"Completed: {volName}", 100, progress, statusLabel)
-        return segmentation
+        
+        # Return references for safe garbage collection during batch processing
+        return segmentation, volN4, transform
 
-    def registration(self, volume):
-        """Executes a 3-stage Elastix registration (Rigid -> Affine -> B-Spline 8.0mm)."""
+    def registration(self, volume, volName):
+        """Executes a 3-stage Elastix registration with tight grid spacing for sulcal precision."""
         moduleDir = os.path.dirname(slicer.modules.aal3brainlabeling.path)
         templatePath = os.path.join(moduleDir, "Resources", "Templates", "MNI152_T1_1mm.nii.gz")
         
@@ -221,7 +205,9 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
             return volume, None
             
         templateNode = slicer.util.loadVolume(templatePath, {"show": False})
-        transformNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLTransformNode", "AAL3BrainLabeling_Transform")
+        
+        # Unique naming prevents node overlapping/shifting during batch processing
+        transformNode = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLTransformNode", f"{volName}_AAL3_Transform")
 
         try:
             try:
@@ -243,18 +229,17 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
                 '(NewSamplesEveryIteration "true")\n'
             )
             
-            # STAGE 1 & 2: Global alignment via Rigid and Affine transforms
             p_rigid = base_config + '(Transform "EulerTransform")\n(MaximumNumberOfIterations 1000)\n'
             p_affine = base_config + '(Transform "AffineTransform")\n(MaximumNumberOfIterations 1000)\n'
             
-            # STAGE 3: High-precision B-Spline for cortical sulci detection
-            # 8.0mm spacing is optimized for deep sulcal folds without topological artifacts
+            # STAGE 3: B-Spline optimized for deep cortical sulci mapping
+            # Grid spacing set to 6.0mm for fine topological tracking
             p_bspline = base_config + (
                 '(Transform "BSplineTransform")\n'
-                '(FinalGridSpacingInPhysicalUnits 8.0)\n' 
+                '(FinalGridSpacingInPhysicalUnits 6.0)\n' 
                 '(NumberOfResolutions 5)\n' 
                 '(MaximumNumberOfIterations 1500)\n'
-                '(NumberOfSpatialSamples 10000)\n' # Peak cortical precision as requested
+                '(NumberOfSpatialSamples 30000)\n' 
             )
             
             temp_dir = slicer.app.temporaryPath
@@ -270,43 +255,47 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
             slicer.mrmlScene.RemoveNode(transformNode)
             transformNode = None
         finally:
+            # Always clean up the template node to save memory
             slicer.mrmlScene.RemoveNode(templateNode)
+            
         return volume, transformNode
 
-    def atlasMapping(self, transform):
-        """Hardens the atlas labels into the patient space with high fidelity."""
+    def atlasMapping(self, transform, volName):
+        """Hardens the anatomical transform onto the AAL3 labelmap."""
         moduleDir = os.path.dirname(slicer.modules.aal3brainlabeling.path)
         atlasPath = os.path.join(moduleDir, "Resources", "Atlas", "AAL3v1_1mm.nii.gz")
         ctblPath = os.path.join(moduleDir, "Resources", "Atlas", "AAL3_ColorTable.ctbl")
         
-        colorNode = None
-        if os.path.exists(ctblPath):
+        # Reuse existing color table to prevent scene cluttering during batch runs
+        colorNode = slicer.mrmlScene.GetFirstNodeByName("AAL3_ColorTable")
+        if not colorNode and os.path.exists(ctblPath):
             colorNode = slicer.util.loadColorTable(ctblPath)
+            colorNode.SetName("AAL3_ColorTable")
 
         atlasNode = slicer.util.loadLabelVolume(atlasPath)
         
         if colorNode and atlasNode.GetDisplayNode():
             atlasNode.GetDisplayNode().SetAndObserveColorNodeID(colorNode.GetID())
         
-        # Applying the registration matrix to the anatomical labelmap
         atlasNode.SetAndObserveTransformNodeID(transform.GetID())
         slicer.vtkSlicerTransformLogic().hardenTransform(atlasNode)
         
-        segmentation = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLSegmentationNode", "AAL3_Patient_Space")
+        segmentation = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLSegmentationNode", f"{volName}_AAL3_Segmentation")
         slicer.modules.segmentations.logic().ImportLabelmapToSegmentationNode(atlasNode, segmentation)
         
         segmentation.CreateClosedSurfaceRepresentation()
         slicer.mrmlScene.RemoveNode(atlasNode)
+        
         return segmentation
 
-    def biasCorrection(self, volume):
-        """Ensures intensity homogeneity via N4 Bias Field Correction."""
-        out = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScalarVolumeNode", "N4_Corrected")
+    def biasCorrection(self, volume, volName):
+        """Corrects RF coil non-uniformities to improve registration accuracy."""
+        out = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLScalarVolumeNode", f"{volName}_N4_Corrected")
         slicer.cli.runSync(slicer.modules.n4itkbiasfieldcorrection, None, {"inputImageName": volume.GetID(), "outputImageName": out.GetID()})
         return out
 
     def volumeStatistics(self, segmentation, volume):
-        """Computes morphometric statistics for all brain segments."""
+        """Utilizes Slicer's SegmentStatistics module for metric computation."""
         import SegmentStatistics
         logic = SegmentStatistics.SegmentStatisticsLogic()
         logic.getParameterNode().SetParameter("Segmentation", segmentation.GetID())
@@ -315,19 +304,19 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
         return logic.getStatistics()
 
     def getStatValue(self, stats, sid, keyword):
-        """Helper to extract specific metrics like 'volume_mm3' from statistics."""
+        """Safe retrieval of specific metrics from the statistics dictionary."""
         for k in stats.keys():
             if len(k) == 2 and k[0] == sid and keyword.lower() in k[1].lower(): return stats[k]
         return 0.0
 
     def getCentroid(self, stats, sid):
-        """Retrieves spatial center coordinates for connectome calculations."""
+        """Extracts 3D spatial center coordinates for distance matrix calculations."""
         for k in stats.keys():
             if len(k) == 2 and k[0] == sid and 'centroid' in k[1].lower(): return stats[k]
         return (0.0, 0.0, 0.0)
 
     def exportStats(self, stats, outDir, segmentation, volName):
-        """Saves quantitative volumetric results to a CSV report."""
+        """Writes structural volumes and intensities to a CSV file."""
         fileName = f"{volName}_AAL3_Morphometry_Results.csv"
         csvPath = os.path.join(outDir, fileName)
         
@@ -346,7 +335,7 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
                 writer.writerow([name, vol, mean])
 
     def asymmetry(self, stats, segmentation):
-        """Calculates Hemispheric Asymmetry Index (AI) for bilateral regions."""
+        """Computes the Hemispheric Asymmetry Index (AI) for homologous bilateral regions."""
         print("\n--- Hemispheric Asymmetry Indices (AI) ---")
         vol_data = {}
         for sid in stats['SegmentIDs']:
@@ -361,12 +350,11 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
                 R_name = L_name.replace("_L", "_R")
                 if R_name in vol_data:
                     L, R = vol_data[L_name], vol_data[R_name]
-                    # Asymmetry Index calculation: (L-R)/(L+R)
                     ai = (L - R) / (L + R + 1e-6)
                     print(f"{L_name[:-2]} AI: {ai:.4f}")
 
     def connectome(self, stats, outDir, volName):
-        """Produces a Euclidean Distance Matrix between region centroids."""
+        """Generates a comprehensive Euclidean distance structural connectome matrix."""
         ids = stats['SegmentIDs']
         n = len(ids)
         matrix = np.zeros((n, n))
@@ -381,22 +369,26 @@ class AAL3BrainLabelingLogic(ScriptedLoadableModuleLogic):
         np.savetxt(csvPath, matrix, delimiter=",", fmt="%.4f")
 
     def batchPipeline(self, folder, outDir, progress, statusLabel=None):
-        """Automated pipeline for processing disk directories with strict memory cleanup."""
+        """
+        Batch processes a directory of MRI volumes.
+        Utilizes strict object-reference cleanup to prevent memory leaks and map shifting.
+        """
         files = [f for f in os.listdir(folder) if f.endswith(('.nii', '.nii.gz'))]
-        total = len(files)
         
         for i, f in enumerate(files):
             path = os.path.join(folder, f)
             volume = slicer.util.loadVolume(path)
+            
             if volume:
-                segmentation = self.pipeline(volume, outDir, progress, statusLabel)
+                # Capture explicitly created nodes to safely delete them later
+                result = self.pipeline(volume, outDir, progress, statusLabel)
                 
-                # STRICT MEMORY MANAGEMENT: Clear scene nodes after each successful patient analysis
+                # STRICT MEMORY MANAGEMENT: Deletes objects by their unique memory references
+                # This definitively prevents cross-patient transform contamination (map shifting)
+                if result:
+                    segmentation, volN4, transform = result
+                    if segmentation: slicer.mrmlScene.RemoveNode(segmentation)
+                    if volN4: slicer.mrmlScene.RemoveNode(volN4)
+                    if transform: slicer.mrmlScene.RemoveNode(transform)
+                
                 slicer.mrmlScene.RemoveNode(volume)
-                if segmentation:
-                    slicer.mrmlScene.RemoveNode(segmentation)
-                
-                # Cleanup auxiliary nodes generated during the run
-                for node_name in ["N4_Corrected", "AAL3BrainLabeling_Transform"]:
-                    node = slicer.mrmlScene.GetFirstNodeByName(node_name)
-                    if node: slicer.mrmlScene.RemoveNode(node)
